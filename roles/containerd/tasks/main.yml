@@ -1,0 +1,41 @@
+---
+- name: 分发ipv4流量配置文件
+  copy: src=mk8s.conf dest=/etc/modules-load.d/k8s.conf
+
+- name: 转发IPV4并让iptables看到桥接流量
+  shell: modprobe overlay && modprobe br_netfilter
+
+- name: 分发sysctl配置文件
+  copy: src=sk8s.conf dest=/etc/sysctl.d/k8s.conf
+
+- name: 应用sysctl参数
+  shell: sysctl --system
+
+- name: 创建临时目录
+  file: dest={{ tmp_dir }} state=directory
+
+- name: 分发runc二进制文件
+  copy: src={{ software_dir }}/runc.amd64 dest={{ tmp_dir }}/
+
+- name: 安装runc
+  shell: install -m 755 {{ tmp_dir }}/runc.amd64 /usr/local/bin/runc
+
+- name: 分发并解压containerd二进制包
+  unarchive: src={{ item }} dest={{ tmp_dir }}
+  with_fileglob:
+    - "{{ software_dir }}/containerd-*.tar.gz"
+
+- name: 移动containerd二进制文件
+  shell: cp -rf {{ tmp_dir }}/bin/* /usr/local/bin
+
+- name: 分发service文件
+  copy: src=containerd.service dest=/usr/lib/systemd/system/
+
+- name: 创建目录
+  file: dest=/etc/containerd state=directory
+
+- name: 配置containerd
+  copy: src=config.toml dest=/etc/containerd/config.toml
+
+- name: 启动containerd
+  systemd: name=containerd state=restarted enabled=yes daemon_reload=yes

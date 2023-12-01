@@ -1,0 +1,7 @@
+KUBELET_OPTS="--v=2 \
+--config={{ k8s_work_dir }}/cfg/kubelet-config.yml \
+--hostname-override={{ node_name }} \
+--container-runtime-endpoint=unix:///var/run/containerd/containerd.sock \
+--kubeconfig={{ k8s_work_dir }}/cfg/kubelet.kubeconfig \
+--bootstrap-kubeconfig={{ k8s_work_dir }}/cfg/bootstrap.kubeconfig \
+--cert-dir={{ k8s_work_dir }}/ssl"
